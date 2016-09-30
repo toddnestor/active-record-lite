@@ -89,6 +89,7 @@ class SQLObject
       if where.is_a?(Array)
         where_string += self.build_where(where)
       else
+        next unless columns.include?(where[:col])
         where_string += "#{where[:col]} #{where[:comparator]} #{where[:value]}"
       end
 
