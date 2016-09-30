@@ -3,9 +3,9 @@ require_relative '01_sql_object'
 require_relative 'relation'
 
 module Searchable
-  def where(params)
+  def where(params, comparator = '=')
     relation = Relation.new(self)
-    relation.where(params)
+    relation.where(params, comparator)
   end
 end
 

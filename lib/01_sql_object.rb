@@ -75,6 +75,19 @@ class SQLObject
     sql
   end
 
+  def self.build_limit(limit = 0)
+    if limit && limit > 0
+      sql = <<-SQL
+        LIMIT
+          #{limit}
+      SQL
+    else
+      sql = ""
+    end
+
+    sql
+  end
+
   def self.build_where_clauses(wheres)
     wheres = [wheres] unless wheres.is_a?(Array)
 
