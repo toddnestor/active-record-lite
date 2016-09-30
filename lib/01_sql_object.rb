@@ -194,7 +194,7 @@ class SQLObject
 
   def update
     values = update_attributes + [self.id]
-    sql = build_update + SQLObject.build_where(col: :id, value: '?')
+    sql = build_update + self.class.build_where(col: :id, value: '?')
 
     SQLObject.execute(sql, values)
   end
