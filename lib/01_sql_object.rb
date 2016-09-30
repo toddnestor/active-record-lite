@@ -42,6 +42,8 @@ class SQLObject
 
   def self.build_select(attrs = nil)
     attrs ||= ['*']
+    attrs = [attrs] unless attrs.is_a?(Array)
+
     sql = <<-SQL
       SELECT
         #{attrs.join(', ')}
@@ -63,7 +65,7 @@ class SQLObject
     join_strings.join("\n")
   end
 
-  def self.build_from(table = self.table_name, joins = [])
+  def self.build_from(joins = [], table = self.table_name)
     sql = <<-SQL
       FROM
         #{table}
@@ -89,7 +91,8 @@ class SQLObject
       if where.is_a?(Array)
         where_string += self.build_where(where)
       else
-        next unless columns.include?(where[:col])
+        col_parts = where[:col].to_s.split('.')
+        next unless columns.include?(where[:col]) || col_parts.length > 1
         where_string += "#{where[:col]} #{where[:comparator]} #{where[:value]}"
       end
 
