@@ -81,10 +81,10 @@ class SQLObject
     wheres.each_with_index do |where, i|
       where_string = ""
 
-      where[:type] ||= 'AND'
+      where[:type] ||= 'AND '
       where[:comparator] ||= '='
 
-      where_string += i > 0 ? "#{where[:type]} }" : ""
+      where_string += i > 0 ? "#{where[:type]}" : ""
 
       if where.is_a?(Array)
         where_string += self.build_where(where)
@@ -98,6 +98,45 @@ class SQLObject
     where_strings.join("\n")
   end
 
+  def build_insert
+    <<-SQL
+      INSERT INTO
+        #{self.class.table_name}
+        (#{attributes.keys.join(', ')})
+      VALUES
+        (#{attributes.keys.map{'?'}.join(', ')})
+    SQL
+  end
+
+  def build_update
+    <<-SQL
+      UPDATE
+        #{self.class.table_name}
+      SET
+        #{build_update_columns.join(', ')}
+    SQL
+  end
+
+  def build_update_columns
+    columns = []
+
+    attributes.keys.each do |key|
+      columns << "#{key} = ?" unless key == :id
+    end
+
+    columns
+  end
+
+  def update_attributes
+    values = []
+
+    attributes.each do |key, value|
+      values << value unless key == :id
+    end
+
+    values
+  end
+
   def self.build_where(wheres)
     "WHERE #{self.build_where_clauses(wheres)}"
   end
@@ -107,12 +146,16 @@ class SQLObject
     self.parse_all(DBConnection.execute(sql))
   end
 
-  def self.execute(sql)
-    DBConnection.execute(sql)
+  def self.execute(*args)
+    DBConnection.execute(*args)
   end
 
-  def self.get_objects(sql)
-    self.parse_all(self.execute(sql))
+  def self.get_last_id
+    DBConnection.last_insert_row_id
+  end
+
+  def self.get_objects(*args)
+    self.parse_all(self.execute(*args))
   end
 
   def self.parse_all(results)
@@ -137,18 +180,26 @@ class SQLObject
   end
 
   def attribute_values
-    # ...
+    attributes.values
   end
 
   def insert
-    # ...
+    SQLObject.execute(build_insert, *attribute_values)
+    self.id = SQLObject.get_last_id
   end
 
   def update
-    # ...
+    values = update_attributes + [self.id]
+    sql = build_update + SQLObject.build_where(col: :id, value: '?')
+
+    SQLObject.execute(sql, values)
   end
 
   def save
-    # ...
+    if self.id
+      update
+    else
+      insert
+    end
   end
 end
